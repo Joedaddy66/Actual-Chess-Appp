@@ -1,0 +1,5 @@
+{
+  "name": "Hollow App Architecture Visualizer",
+  "description": "An interactive application that demonstrates the 'hollow app' architecture, where a thin front-end client communicates with a powerful, modular back-end engine, all connected through a continuous deployment pipeline.",
+  "requestFramePermissions": []
+}
