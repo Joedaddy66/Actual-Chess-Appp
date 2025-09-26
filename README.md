@@ -18,3 +18,27 @@ View your app in AI Studio: https://ai.studio/apps/drive/1IbnrCct74psfafRQMgTENZ
 2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
 3. Run the app:
    `npm run dev`
+
+## Build for Production
+
+To build the application for production deployment:
+
+```bash
+# Build the application
+npm run build
+
+# Clean build (removes previous build artifacts)
+npm run build:clean
+
+# Build and preview locally
+npm run preview:build
+```
+
+The build process will:
+- Create optimized, minified production files in the `dist/` directory
+- Generate separate chunks for vendor libraries and API dependencies
+- Optimize assets for better caching and loading performance
+
+Build artifacts:
+- `dist/index.html` - Main HTML file
+- `dist/assets/` - Optimized JavaScript and CSS files
