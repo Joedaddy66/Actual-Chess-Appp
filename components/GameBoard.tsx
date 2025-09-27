@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import type { GameState, GameMode, LegalMove, VictoryState } from '../types';
 import { getLegalMoves } from '../services/moveLogic';
+import PieceImage from './PieceImage';
 
 interface GameBoardProps {
   gameState: GameState;
@@ -10,15 +11,6 @@ interface GameBoardProps {
   aiMoveHighlight: { from: string | null; to: string | null };
   victoryState: VictoryState;
 }
-
-const chessPieces: { [key: string]: string } = {
-  WK: '♔', WQ: '♕', WR: '♖', WB: '♗', WN: '♘', WP: '♙',
-  BK: '♚', BQ: '♛', BR: '♜', BB: '♝', BN: '♞', BP: '♟',
-  // Helmbreaker Pieces
-  WSE: '❖', // White Siege Engine
-  BGR: '♜', // Black Guard Rook (re-using Rook)
-  BFK: '♚', // Black Fortress King
-};
 
 // Helper to get coordinates for absolute positioning of animations
 const getCoords = (square: string): [number, number] => {
@@ -122,11 +114,15 @@ const GameBoard: React.FC<GameBoardProps> = ({ gameState, onMove, isAiThinking, 
     }
   };
 
-  const renderPiece = (piece: string) => {
-    if (gameMode === 'leviathan') {
-      return 'Λ';
-    }
-    return chessPieces[piece] || '?';
+  const renderPiece = (piece: string, className?: string, style?: React.CSSProperties) => {
+    return (
+      <PieceImage 
+        piece={piece} 
+        gameMode={gameMode} 
+        className={className}
+        style={style}
+      />
+    );
   };
   
   const isLegalMove = (squareId: string): LegalMove | undefined => legalMoves.find(move => move.to === squareId);
@@ -178,7 +174,7 @@ const GameBoard: React.FC<GameBoardProps> = ({ gameState, onMove, isAiThinking, 
                     `}
                     style={getPieceStyle(piece)}
                   >
-                    {renderPiece(piece)}
+                    {renderPiece(piece, '', getPieceStyle(piece))}
                   </div>
                 )}
                  {selectedSquare && legalMoveInfo && (
@@ -211,7 +207,7 @@ const GameBoard: React.FC<GameBoardProps> = ({ gameState, onMove, isAiThinking, 
                           className="w-full h-full flex items-center justify-center font-bold text-5xl animate-takedown"
                           style={getPieceStyle(piece)}
                         >
-                           {renderPiece(piece)}
+                           {renderPiece(piece, '', getPieceStyle(piece))}
                         </div>
                     </div>
                 )
