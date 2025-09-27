@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import type { GameState, GameMode, LegalMove, VictoryState } from '../types';
 import { getLegalMoves } from '../services/moveLogic';
-import PieceImage from './PieceImage';
+import PieceImage, { PieceTheme } from './PieceImage';
 
 interface GameBoardProps {
   gameState: GameState;
@@ -10,6 +10,7 @@ interface GameBoardProps {
   gameMode: GameMode;
   aiMoveHighlight: { from: string | null; to: string | null };
   victoryState: VictoryState;
+  pieceTheme?: PieceTheme;
 }
 
 // Helper to get coordinates for absolute positioning of animations
@@ -20,7 +21,15 @@ const getCoords = (square: string): [number, number] => {
 };
 
 
-const GameBoard: React.FC<GameBoardProps> = ({ gameState, onMove, isAiThinking, gameMode, aiMoveHighlight, victoryState }) => {
+const GameBoard: React.FC<GameBoardProps> = ({ 
+  gameState, 
+  onMove, 
+  isAiThinking, 
+  gameMode, 
+  aiMoveHighlight, 
+  victoryState, 
+  pieceTheme = 'custom' 
+}) => {
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [animatingCaptures, setAnimatingCaptures] = useState<Record<string, {square: string, piece: string}>>({});
   const [isAnimating, setIsAnimating] = useState<boolean>(false);
@@ -121,6 +130,7 @@ const GameBoard: React.FC<GameBoardProps> = ({ gameState, onMove, isAiThinking, 
         gameMode={gameMode} 
         className={className}
         style={style}
+        theme={pieceTheme}
       />
     );
   };
