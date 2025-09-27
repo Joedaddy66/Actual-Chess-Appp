@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import type { BoardState, GameState, GameMode, MovePair, Player, VictoryState, Essence } from './types';
 import { getBackendResponse } from './services/geminiService';
+import { startTelemetryPolling, TelemetryResponse } from './src/api/telemetry';
 import GameBoard from './components/GameBoard';
 import ServerLog from './components/ServerLog';
 import CiCdPipeline from './components/CiCdPipeline';
@@ -78,6 +79,13 @@ const App: React.FC = () => {
   const [essence, setEssence] = useState<Essence>(initialEssence);
   const [displayPlane, setDisplayPlane] = useState<'mind' | 'body' | 'spirit'>('body');
   const cicdAnimationRun = useRef(false);
+
+  // API Integration State
+  const [rttMs, setRttMs] = useState<number | null>(null);
+  const [telemetry, setTelemetry] = useState<TelemetryResponse | null>(null);
+  const [bias, setBias] = useState<number>(0.0);
+  const abortCtrl = useMemo(() => new AbortController(), []);
+  const isMounted = useRef(true);
 
   const resetGameState = useCallback((mode: GameMode) => {
     let initialState: GameState;
@@ -279,6 +287,23 @@ const App: React.FC = () => {
     return () => clearInterval(interval);
   }, [isAuthenticated]);
 
+  // Telemetry polling effect
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    
+    isMounted.current = true;
+    startTelemetryPolling((t) => {
+      if (!isMounted.current) return;
+      setTelemetry(t);
+      addServerLog(`[TELEMETRY] RTT: ${t.rtt_ms}ms, Health: ${t.health}, Cost: ${t.cost}`);
+    }, { intervalMs: 3000, signal: abortCtrl.signal });
+
+    return () => {
+      isMounted.current = false;
+      abortCtrl.abort();
+    };
+  }, [isAuthenticated, abortCtrl]);
+
   const handleLogin = (name: string, faction: string) => {
     setUsername(name);
     setNickname(faction);
@@ -347,6 +372,32 @@ const App: React.FC = () => {
               {gameMode === 'rite' && <EssenceTracker essence={essence} />}
               <GameTimer whiteTime={whiteTime} blackTime={blackTime} activePlayer={activePlayer} isAiThinking={isAiThinking} />
               <GameRules gameMode={gameMode} />
+              
+              {/* API Integration Dashboard */}
+              <div className="mt-4 p-3 bg-gray-800 rounded-lg border border-gray-600">
+                <h3 className="text-sm font-semibold text-purple-400 mb-2">API Telemetry Dashboard</h3>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div>RTT: {rttMs !== null ? `${rttMs} ms` : telemetry?.rtt_ms ? `${telemetry.rtt_ms} ms` : '—'}</div>
+                  <div>Health: {telemetry?.health ?? '—'}</div>
+                  <div>Cost: {telemetry?.cost ?? '—'}</div>
+                  <div>Carbon: {telemetry?.carbon ?? '—'}</div>
+                  <div className="col-span-2">Error Rate: {telemetry?.error_rate ?? '—'}</div>
+                </div>
+                <div className="mt-2">
+                  <label className="block text-xs text-gray-400 mb-1">
+                    Creative Context Bias: {bias.toFixed(2)}
+                  </label>
+                  <input
+                    type="range"
+                    min={-1}
+                    max={1}
+                    step={0.05}
+                    value={bias}
+                    onChange={(e) => setBias(parseFloat(e.target.value))}
+                    className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+                  />
+                </div>
+              </div>
             </Card.Body>
           </Card>
         </div>
