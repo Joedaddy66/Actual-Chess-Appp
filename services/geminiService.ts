@@ -1,11 +1,14 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import type { GameState, GameMode } from '../types';
 
+// Temporarily make API key optional to test UI changes
+const API_KEY = process.env.API_KEY || 'dummy-key-for-testing';
+
 if (!process.env.API_KEY) {
-  throw new Error("API_KEY environment variable is not set.");
+  console.warn("API_KEY environment variable is not set. Using dummy key for testing.");
 }
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey: API_KEY });
 
 // Helper function for exponential backoff delay
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
