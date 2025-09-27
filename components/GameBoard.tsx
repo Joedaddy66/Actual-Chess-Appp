@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import type { GameState, GameMode, LegalMove, VictoryState } from '../types';
 import { getLegalMoves } from '../services/moveLogic';
+import { pieceImages, fallbackChessPieces } from '../services/pieceImages';
 
 interface GameBoardProps {
   gameState: GameState;
@@ -10,15 +11,6 @@ interface GameBoardProps {
   aiMoveHighlight: { from: string | null; to: string | null };
   victoryState: VictoryState;
 }
-
-const chessPieces: { [key: string]: string } = {
-  WK: '♔', WQ: '♕', WR: '♖', WB: '♗', WN: '♘', WP: '♙',
-  BK: '♚', BQ: '♛', BR: '♜', BB: '♝', BN: '♞', BP: '♟',
-  // Helmbreaker Pieces
-  WSE: '❖', // White Siege Engine
-  BGR: '♜', // Black Guard Rook (re-using Rook)
-  BFK: '♚', // Black Fortress King
-};
 
 // Helper to get coordinates for absolute positioning of animations
 const getCoords = (square: string): [number, number] => {
@@ -126,7 +118,28 @@ const GameBoard: React.FC<GameBoardProps> = ({ gameState, onMove, isAiThinking, 
     if (gameMode === 'leviathan') {
       return 'Λ';
     }
-    return chessPieces[piece] || '?';
+    
+    const imageUrl = pieceImages[piece];
+    if (imageUrl) {
+      return (
+        <img 
+          src={imageUrl} 
+          alt={piece}
+          className="w-full h-full object-contain"
+          onError={(e) => {
+            // Fallback to Unicode character if image fails to load
+            const target = e.target as HTMLImageElement;
+            const parent = target.parentElement;
+            if (parent) {
+              parent.innerHTML = fallbackChessPieces[piece] || '?';
+              parent.className = parent.className.replace('object-contain', '');
+            }
+          }}
+        />
+      );
+    }
+    
+    return fallbackChessPieces[piece] || '?';
   };
   
   const isLegalMove = (squareId: string): LegalMove | undefined => legalMoves.find(move => move.to === squareId);
