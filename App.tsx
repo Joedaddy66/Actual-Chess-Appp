@@ -18,6 +18,7 @@ import GameOverScreen from './components/GameOverScreen';
 import EssenceTracker from './components/EssenceTracker';
 import LambdaControls from './components/LambdaControls';
 import HelmbreakerInfo from './components/HelmbreakerInfo';
+import ThemeSwitcher, { PieceTheme } from './components/ThemeSwitcher';
 
 const initialLeviathanBoard: BoardState = {
   'A1': 'W', 'B1': 'W', 'C1': 'W', 'D1': 'W', 'E1': 'W', 'F1': 'W', 'G1': 'W', 'H1': 'W',
@@ -77,6 +78,7 @@ const App: React.FC = () => {
   const [victoryState, setVictoryState] = useState<VictoryState>(null);
   const [essence, setEssence] = useState<Essence>(initialEssence);
   const [displayPlane, setDisplayPlane] = useState<'mind' | 'body' | 'spirit'>('body');
+  const [pieceTheme, setPieceTheme] = useState<PieceTheme>('custom');
   const cicdAnimationRun = useRef(false);
 
   const resetGameState = useCallback((mode: GameMode) => {
@@ -336,6 +338,7 @@ const App: React.FC = () => {
               <GameModeSwitcher currentGameMode={gameMode} onGameModeChange={handleGameModeChange} />
               {gameMode === 'lambda' && <LambdaControls meta={gameState.meta} displayPlane={displayPlane} onPlaneChange={setDisplayPlane} />}
               {gameMode === 'helmbreaker' && <HelmbreakerInfo meta={gameState.meta} />}
+              <ThemeSwitcher currentTheme={pieceTheme} onThemeChange={setPieceTheme} />
               <GameBoard 
                 gameState={{...gameState, board: boardToDisplay}}
                 onMove={handleMove} 
@@ -343,6 +346,7 @@ const App: React.FC = () => {
                 gameMode={gameMode} 
                 aiMoveHighlight={aiMoveHighlight}
                 victoryState={victoryState}
+                pieceTheme={pieceTheme}
               />
               {gameMode === 'rite' && <EssenceTracker essence={essence} />}
               <GameTimer whiteTime={whiteTime} blackTime={blackTime} activePlayer={activePlayer} isAiThinking={isAiThinking} />
