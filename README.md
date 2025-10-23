@@ -63,6 +63,7 @@ Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
 
 ## 📚 Documentation
 
+- **[Quick Setup Guide](SETUP.md)** - 5-minute CI/CD setup instructions
 - **[Deployment Guide](DEPLOYMENT.md)** - Complete CI/CD setup and deployment instructions
 - **[Monitoring Guide](MONITORING.md)** - Application monitoring and health checks
 
