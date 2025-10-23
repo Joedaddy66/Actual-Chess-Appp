@@ -61,6 +61,13 @@ Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
 
 ---
 
+## 📚 Documentation
+
+- **[Deployment Guide](DEPLOYMENT.md)** - Complete CI/CD setup and deployment instructions
+- **[Monitoring Guide](MONITORING.md)** - Application monitoring and health checks
+
+---
+
 ## Quick Start
 
 ```sh
@@ -75,6 +82,39 @@ npm install
 # 3. Run in dev mode
 npm run dev
 ```
+
+---
+
+## 🚀 Automated Deployment
+
+This repository includes a complete CI/CD pipeline for automated production deployments.
+
+### Features
+
+- **Continuous Integration:** Automated testing and building on every push
+- **Continuous Deployment:** Automatic deployment to Vercel on main branch updates
+- **Security Scanning:** Regular dependency audits and vulnerability checks
+- **Environment Management:** Secure handling of API keys and secrets via GitHub Secrets
+- **Health Checks:** Post-deployment verification and monitoring
+- **Zero-Touch Deployment:** Fully automated from commit to production
+
+### Deployment Workflow
+
+1. Push changes to `main` branch
+2. GitHub Actions automatically:
+   - Runs TypeScript type checks
+   - Builds the production bundle
+   - Deploys to Vercel
+   - Performs health checks
+3. Application is live at your Vercel URL
+
+### Setup Instructions
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed setup instructions including:
+- Configuring GitHub Secrets
+- Setting up Vercel integration
+- Managing environment variables
+- Monitoring and alerts
 
 ---
 
