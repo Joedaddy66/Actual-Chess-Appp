@@ -7,9 +7,10 @@ This document provides comprehensive instructions for deploying the Actual Chess
 1. [Prerequisites](#prerequisites)
 2. [CI/CD Pipeline Overview](#cicd-pipeline-overview)
 3. [Environment Configuration](#environment-configuration)
-4. [Deployment Providers](#deployment-providers)
-5. [Monitoring and Alerts](#monitoring-and-alerts)
-6. [Troubleshooting](#troubleshooting)
+4. [GCP Zero Trust API Gateway](#gcp-zero-trust-api-gateway)
+5. [Deployment Providers](#deployment-providers)
+6. [Monitoring and Alerts](#monitoring-and-alerts)
+7. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -115,6 +116,135 @@ nano .env
 ```
 
 **Never commit the `.env` file to version control.**
+
+---
+
+## GCP Zero Trust API Gateway
+
+This application includes automated deployment of a Zero Trust API Gateway on Google Cloud Platform (GCP) to secure backend API endpoints with Firebase authentication and API key metering.
+
+### Architecture Overview
+
+The Zero Trust Edge provides:
+- **Firebase JWT Authentication**: All requests must include a valid Firebase ID token
+- **API Key Metering**: Rate limiting and quota management via API keys
+- **Secure Backend Connection**: Protected Cloud Run service access
+- **Automated Deployment**: GitHub Actions workflow with Workload Identity Federation (WIF)
+
+### Required GCP GitHub Secrets
+
+Before the API Gateway can be deployed, you must configure the following GitHub Secrets:
+
+| Secret Name | Description | Example Value |
+|-------------|-------------|---------------|
+| `GCP_PROJECT_ID` | Your GCP project identifier | `obsidian-governance-4422` |
+| `GCP_WIF_PROVIDER` | Workload Identity Federation provider path | `projects/9876543210/locations/global/workloadIdentityPools/github-pool/providers/github-provider` |
+| `DEPLOY_SERVICE_ACCOUNT` | Service account email for deployment | `api-gateway-deploy@obsidian-governance-4422.iam.gserviceaccount.com` |
+
+### Setting Up GCP Secrets
+
+1. **Navigate to GitHub Repository Settings:**
+   - Go to **Settings** → **Secrets and variables** → **Actions**
+   - Click **New repository secret**
+
+2. **Add GCP_PROJECT_ID:**
+   ```
+   Name: GCP_PROJECT_ID
+   Value: [Your GCP Project ID from Platform Team]
+   ```
+
+3. **Add GCP_WIF_PROVIDER:**
+   ```
+   Name: GCP_WIF_PROVIDER
+   Value: [Full WIF provider path from Platform Team]
+   ```
+
+4. **Add DEPLOY_SERVICE_ACCOUNT:**
+   ```
+   Name: DEPLOY_SERVICE_ACCOUNT
+   Value: [Service account email from Platform Team]
+   ```
+
+### API Gateway Configuration Files
+
+The repository includes two files for API Gateway deployment:
+
+1. **`config.yaml`** (Repository root)
+   - OpenAPI 2.0 specification
+   - Defines Firebase JWT authentication rules
+   - Configures API key requirements
+   - Maps to Cloud Run backend service
+
+2. **`.github/workflows/deploy.yaml`**
+   - GitHub Actions workflow
+   - Authenticates via Workload Identity Federation
+   - Creates API Gateway configuration
+   - Deploys gateway to GCP
+
+### Deployment Trigger
+
+The API Gateway deployment is triggered automatically when:
+- Code is pushed to the `main` branch
+- The workflow file exists at `.github/workflows/deploy.yaml`
+- All three required GitHub Secrets are configured
+
+### Workflow Steps
+
+1. **Secure Handshake**: Authenticate to GCP using Workload Identity Federation (no service account keys required)
+2. **Create API Config**: Deploy OpenAPI specification with Firebase security rules
+3. **Deploy Gateway**: Create API Gateway instance in `us-central1`
+
+### Verifying Deployment
+
+After a successful deployment:
+
+1. Check the GitHub Actions workflow run logs
+2. Navigate to GCP Console → API Gateway
+3. Verify `obsidian-agent-gateway` is deployed
+4. Test the endpoint with a valid Firebase JWT and API key
+
+### Security Features
+
+- **No Service Account Keys**: Uses Workload Identity Federation for keyless authentication
+- **JWT Validation**: Firebase tokens validated against your GCP project
+- **API Key Enforcement**: All requests require a valid API key for metering
+- **HTTPS Only**: All traffic encrypted in transit
+
+### Troubleshooting API Gateway Deployment
+
+**Issue:** Workflow fails with "Missing required secret"
+```
+Solution:
+1. Verify all three GCP secrets are configured in GitHub Settings
+2. Check secret names match exactly (case-sensitive)
+3. Ensure secrets are available to the production environment
+```
+
+**Issue:** Authentication to GCP fails
+```
+Solution:
+1. Verify GCP_WIF_PROVIDER path is correct and complete
+2. Check DEPLOY_SERVICE_ACCOUNT has necessary permissions
+3. Ensure Workload Identity Federation is configured in GCP
+4. Contact Platform Team to verify service account setup
+```
+
+**Issue:** API Gateway creation fails
+```
+Solution:
+1. Verify GCP_PROJECT_ID is correct
+2. Check that the API Gateway API is enabled in GCP
+3. Ensure service account has api-gateway.admin role
+4. Review gcloud command output in workflow logs
+```
+
+**Issue:** config.yaml has syntax errors
+```
+Solution:
+1. Validate YAML syntax using: python3 -c "import yaml; yaml.safe_load(open('config.yaml'))"
+2. Ensure secrets placeholders match GitHub Secrets exactly
+3. Verify OpenAPI 2.0 schema compliance
+```
 
 ---
 
