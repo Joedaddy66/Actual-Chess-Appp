@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { BoardState, GameState, GameMode, MovePair, Player, VictoryState, Essence } from './types';
 import { getBackendResponse } from './services/geminiService';
@@ -18,7 +19,8 @@ import GameOverScreen from './components/GameOverScreen';
 import EssenceTracker from './components/EssenceTracker';
 import LambdaControls from './components/LambdaControls';
 import HelmbreakerInfo from './components/HelmbreakerInfo';
-import ThemeSwitcher, { PieceTheme } from './components/ThemeSwitcher';
+import { useFirebase } from './hooks/useFirebase';
+import TelemetryMonitor from './components/TelemetryMonitor';
 
 const initialLeviathanBoard: BoardState = {
   'A1': 'W', 'B1': 'W', 'C1': 'W', 'D1': 'W', 'E1': 'W', 'F1': 'W', 'G1': 'W', 'H1': 'W',
@@ -59,9 +61,7 @@ const initialGameState: GameState = {
 };
 
 const App: React.FC = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [username, setUsername] = useState('');
-  const [nickname, setNickname] = useState('');
+  const { user, idToken, loading, login, logout } = useFirebase();
   const [gameMode, setGameMode] = useState<GameMode>('chess');
   const [gameState, setGameState] = useState<GameState>(initialGameState);
   const [serverLogs, setServerLogs] = useState<string[]>(['[SYSTEM] Core Engine Initialized. Waiting for client connection...']);
@@ -78,8 +78,12 @@ const App: React.FC = () => {
   const [victoryState, setVictoryState] = useState<VictoryState>(null);
   const [essence, setEssence] = useState<Essence>(initialEssence);
   const [displayPlane, setDisplayPlane] = useState<'mind' | 'body' | 'spirit'>('body');
-  const [pieceTheme, setPieceTheme] = useState<PieceTheme>('custom');
   const cicdAnimationRun = useRef(false);
+  const prevUser = useRef(user);
+
+  const addServerLog = useCallback((log: string) => {
+    setServerLogs(prev => [...prev.slice(-10), log]);
+  }, []);
 
   const resetGameState = useCallback((mode: GameMode) => {
     let initialState: GameState;
@@ -145,10 +149,6 @@ const App: React.FC = () => {
     setGameMode(mode);
     resetGameState(mode);
   };
-
-  const addServerLog = useCallback((log: string) => {
-    setServerLogs(prev => [...prev.slice(-10), log]);
-  }, []);
   
   // Timer effect
   useEffect(() => {
@@ -169,7 +169,7 @@ const App: React.FC = () => {
   }, [activePlayer, isAiThinking, whiteTime, blackTime, victoryState]);
 
   const handleMove = async (from: string, to: string) => {
-    if (isAiThinking || victoryState || (whiteTime <= 0 || blackTime <= 0)) return;
+    if (isAiThinking || victoryState || (whiteTime <= 0 || blackTime <= 0) || !idToken) return;
 
     const originalGameState = { ...gameState };
     const playerMoveBoard = { ...originalGameState.board };
@@ -187,11 +187,12 @@ const App: React.FC = () => {
 
     try {
       addServerLog(`[ENGINE] Processing command for ${gameMode}...`);
-      const response = await getBackendResponse(userCommand, originalGameState, gameMode, addServerLog);
+      const response = await getBackendResponse(userCommand, originalGameState, gameMode, idToken);
       setBackendResponse(response);
 
       if (response.status === 'success') {
         addServerLog(`[ENGINE] Move validated. New state received.`);
+        // FIX: Corrected typo from addServerlog to addServerLog.
         addServerLog(`[ENGINE] ${response.message}`);
         if (response.aiMove) {
           addServerLog(`[AI] AI move: ${response.aiMove}`);
@@ -209,8 +210,6 @@ const App: React.FC = () => {
           if (response.newBoardState) {
             let newMeta = response.newGameMeta || gameState.meta;
             if (gameMode === 'lambda' && newMeta.planes) {
-               // In Lambda, the board to display might not be the active plane if the AI plane-shifted
-               // The AI tells us the new active plane in `currentPlane`
                const activePlane = newMeta.currentPlane || 'body';
                setGameState({ board: newMeta.planes[activePlane], meta: newMeta });
                setDisplayPlane(activePlane);
@@ -251,7 +250,15 @@ const App: React.FC = () => {
   };
   
   useEffect(() => {
-    if (!isAuthenticated || cicdAnimationRun.current) {
+    if (user && !prevUser.current) { // User just logged in
+        addServerLog(`[SYSTEM] Operator '${user.displayName}' (${user.email}) authenticated and connected.`);
+        setTutorialActive(true);
+    }
+    prevUser.current = user;
+  }, [user, addServerLog]);
+
+  useEffect(() => {
+    if (!user || cicdAnimationRun.current) {
         return;
     }
     
@@ -279,27 +286,25 @@ const App: React.FC = () => {
     
     cicdAnimationRun.current = true;
     return () => clearInterval(interval);
-  }, [isAuthenticated]);
-
-  const handleLogin = (name: string, faction: string) => {
-    setUsername(name);
-    setNickname(faction);
-    setIsAuthenticated(true);
-    addServerLog(`[SYSTEM] Operator '${name}' (${faction}) authenticated and connected.`);
-    setTutorialActive(true);
-  };
+  }, [user]);
 
   const handleLogout = () => {
-    setIsAuthenticated(false);
-    setUsername('');
-    setNickname('');
+    logout();
     resetGameState(gameMode);
     cicdAnimationRun.current = false;
     setCicdLogs([]);
   };
 
-  if (!isAuthenticated) {
-    return <LoginScreen onLogin={handleLogin} />;
+  if (loading) {
+      return (
+          <div className="min-h-screen flex items-center justify-center bg-gray-900 text-gray-200">
+              <p className="text-xl font-cinzel">Initializing Core Systems...</p>
+          </div>
+      )
+  }
+
+  if (!user) {
+    return <LoginScreen onLogin={login} loading={loading} />;
   }
   
   const boardToDisplay = gameMode === 'lambda' ? (gameState.meta.planes?.[displayPlane] ?? gameState.board) : gameState.board;
@@ -309,8 +314,8 @@ const App: React.FC = () => {
       {victoryState && <GameOverScreen victoryState={victoryState} onPlayAgain={() => resetGameState(gameMode)} />}
       {isTutorialActive && <Tutorial onClose={() => setTutorialActive(false)} />}
       <TitleBar 
-        username={username} 
-        nickname={nickname} 
+        username={user.displayName || 'Operator'} 
+        nickname={user.email || 'Unknown Faction'} 
         onLogout={handleLogout} 
         onRunTutorial={() => setTutorialActive(true)} 
       />
@@ -338,7 +343,6 @@ const App: React.FC = () => {
               <GameModeSwitcher currentGameMode={gameMode} onGameModeChange={handleGameModeChange} />
               {gameMode === 'lambda' && <LambdaControls meta={gameState.meta} displayPlane={displayPlane} onPlaneChange={setDisplayPlane} />}
               {gameMode === 'helmbreaker' && <HelmbreakerInfo meta={gameState.meta} />}
-              <ThemeSwitcher currentTheme={pieceTheme} onThemeChange={setPieceTheme} />
               <GameBoard 
                 gameState={{...gameState, board: boardToDisplay}}
                 onMove={handleMove} 
@@ -346,7 +350,6 @@ const App: React.FC = () => {
                 gameMode={gameMode} 
                 aiMoveHighlight={aiMoveHighlight}
                 victoryState={victoryState}
-                pieceTheme={pieceTheme}
               />
               {gameMode === 'rite' && <EssenceTracker essence={essence} />}
               <GameTimer whiteTime={whiteTime} blackTime={blackTime} activePlayer={activePlayer} isAiThinking={isAiThinking} />
@@ -387,6 +390,7 @@ const App: React.FC = () => {
               <CiCdPipeline logs={cicdLogs} />
             </Card.Body>
           </Card>
+          <TelemetryMonitor idToken={idToken} />
         </div>
       </main>
     </div>

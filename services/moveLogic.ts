@@ -64,7 +64,7 @@ const getChessMoves = (square: string, piece: string, gameState: GameState): Leg
             break;
 
         case 'R': // Rook
-        case 'Q': // Queen
+        case 'Q': // Queen (part 1)
             [[0, 1], [0, -1], [1, 0], [-1, 0]].forEach(([dr, dc]) => {
                 for (let i = 1; i < 8; i++) {
                     const status = checkMove(row + i * dr, col + i * dc);
@@ -75,6 +75,7 @@ const getChessMoves = (square: string, piece: string, gameState: GameState): Leg
             // Fallthrough for Queen's diagonal moves
 
         case 'B': // Bishop
+        case 'Q': // Queen (part 2)
             [[1, 1], [1, -1], [-1, 1], [-1, -1]].forEach(([dr, dc]) => {
                 for (let i = 1; i < 8; i++) {
                     const status = checkMove(row + i * dr, col + i * dc);

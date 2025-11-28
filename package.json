@@ -1,24 +1,23 @@
 {
-  "name": "hollow-app-architecture-visualizer",
+  "name": "chess-hollow-app",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build:clean": "rm -rf dist && npm run build",
-    "preview": "vite preview",
-    "preview:build": "npm run build && npm run preview"
+    "preview": "vite preview"
   },
   "dependencies": {
-    "@google/genai": "^1.22.0",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react": "^19.1.1",
+    "@google/genai": "^1.20.0",
+    "react-dom": "^19.1.1",
+    "firebase": "^12.6.0"
   },
   "devDependencies": {
-    "@types/node": "^24.10.1",
-    "@vitejs/plugin-react": "^5.1.1",
-    "typescript": "~5.9.3",
-    "vite": "^7.2.4"
+    "@types/node": "^22.14.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
   }
 }

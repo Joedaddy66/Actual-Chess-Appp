@@ -48,3 +48,9 @@ export type VictoryState = {
   winner: 'W' | 'B' | 'draw';
   reason: string;
 } | null;
+
+export interface TelemetryData {
+  cost: number;
+  latency: number;
+  carbon: number;
+}

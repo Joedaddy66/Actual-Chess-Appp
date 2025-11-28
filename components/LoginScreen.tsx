@@ -1,26 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 interface LoginScreenProps {
-  onLogin: (username: string, nickname: string) => void;
+  onLogin: () => Promise<void>;
+  loading: boolean;
 }
 
-const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
-  const [username, setUsername] = useState('');
-  const [nickname, setNickname] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (username.trim() && password.trim() && nickname.trim()) {
-      // In a real app, this is where you'd make an API call to your OAuth provider
-      // e.g., await authService.login(username, password);
-      onLogin(username, nickname);
-    } else {
-      setError('All fields are required.');
-    }
-  };
-
+const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, loading }) => {
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-black/50 border border-gray-700/50 rounded-lg shadow-2xl p-8 backdrop-blur-sm">
@@ -28,75 +13,22 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
           Core Engine Access
         </h1>
         <p className="text-center text-gray-400 mb-8">
-          Authentication Required
+          Zero-Trust Authentication Required
         </p>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label
-              htmlFor="username"
-              className="block text-sm font-medium text-gray-300 font-cinzel tracking-wider"
-            >
-              Operator Name
-            </label>
-            <input
-              id="username"
-              name="username"
-              type="text"
-              autoComplete="username"
-              required
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 bg-black/50 border border-gray-700/40 rounded-md shadow-sm placeholder-gray-500 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm text-white"
-              placeholder="e.g., Leonidas"
-            />
-          </div>
-           <div>
-            <label
-              htmlFor="nickname"
-              className="block text-sm font-medium text-gray-300 font-cinzel tracking-wider"
-            >
-              Faction (User Pool)
-            </label>
-            <input
-              id="nickname"
-              name="nickname"
-              type="text"
-              required
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 bg-black/50 border border-gray-700/40 rounded-md shadow-sm placeholder-gray-500 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm text-white"
-              placeholder="e.g., Spartans"
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-gray-300 font-cinzel tracking-wider"
-            >
-              Access Key
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 bg-black/50 border border-gray-700/40 rounded-md shadow-sm placeholder-gray-500 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm text-white"
-              placeholder="••••••••"
-            />
-          </div>
-          {error && <p className="text-red-400 text-sm text-center">{error}</p>}
-          <div>
-            <button
-              type="submit"
-              className="w-full flex justify-center py-2 px-4 border border-red-700/80 rounded-md shadow-sm text-sm font-medium text-white bg-red-700/80 hover:bg-red-600/80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors font-cinzel tracking-wider"
-            >
-              Authenticate & Connect
-            </button>
-          </div>
-        </form>
+        <div className="mt-6">
+          <button
+            onClick={onLogin}
+            disabled={loading}
+            className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-black bg-white hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors disabled:opacity-50"
+          >
+            <svg className="w-5 h-5 mr-2 -ml-1" role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <title>Google icon</title>
+                <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.85 3.18-1.73 4.1-1.02 1.02-2.3 1.62-3.85 1.62-4.64 0-8.59-3.82-8.59-8.59s3.95-8.59 8.59-8.59c2.5 0 4.13 1 4.92 1.88l2.5-2.5C20.46.93 18.06 0 15.14 0 9.29 0 4.75 4.38 4.75 10s4.54 10 10.39 10c2.83 0 5.2-1 6.88-2.65.8-.8 1.32-1.8 1.5-3.05H12.48z" fill="#4285F4"/>
+            </svg>
+            Sign in with Google
+          </button>
+        </div>
+        {loading && <p className="text-center text-gray-400 mt-4">Authenticating...</p>}
       </div>
     </div>
   );
